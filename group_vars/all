@@ -1,0 +1,31 @@
+# Credentials
+usr: administrator
+pwd: Tmo46713.
+
+# global variables
+hypervisor: 10.180.136.22
+template: ol7-esxi
+snap_name: auto
+
+# All needed data for Virtual Machine
+vm_data:
+  ansible-test1:
+    ip_address: 10.180.136.44
+    disk: 20
+    ram_memory_mb: 1024
+    cpu_count: 1
+    snapshot_id: 1
+    snap_name: "{{ snap_name }}"
+    vm_template: "{{ template }}"
+    esxi: "{{ hypervisor }}"
+    datastore: "{{ hypervisor }}"
+  ansible-test2:
+    ip_address: 10.180.136.45
+    disk: 30
+    ram_memory_mb: 2048
+    cpu_count: 2
+    snapshot_id: 1
+    snap_name: "{{ snap_name }}"
+    vm_template: "{{ template }}"
+    esxi: "{{ hypervisor }}"
+    datastore: "{{ hypervisor }}"

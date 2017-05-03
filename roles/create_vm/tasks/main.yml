@@ -1,0 +1,36 @@
+- name: Setup vcenter variable
+  include: plays/vcenter.yml
+
+- name: Create the Virtual Machine
+  vmware_guest:
+    hostname: "{{ vcenter }}"
+    username: "{{ usr }}"
+    password: "{{ pwd }}"
+    validate_certs: false
+    datacenter: datacenter
+    esxi_hostname: "{{ esxi }}"
+    name: "{{ vm_name }}"
+    template: "{{ vm_template }}"
+    state: present
+    guest_id: oracleLinux64Guest
+    disk:
+      - size_gb: "{{ vm_disk }}"
+        type: thin
+        datastore: "{{ datastore }}"
+    hardware:
+        memory_mb: "{{ vm_mem }}"
+        num_cpus: "{{ vm_cpu }}"
+    networks:
+      - name: VM Network
+        network: 'VM Network'
+        gateway: 10.180.136.1
+        dns_servers:
+          - 10.197.200.11
+        ip: "{{ vm_ip }}"
+        netmask: 255.255.254.0
+        domain: vsb
+    wait_for_ip_address: yes
+  register: vm_create
+- debug:
+    var: create
+    verbosity: 2

@@ -1,0 +1,42 @@
+- name: Setup vcenter variable
+  vars:
+    esxi: "{{ vm_data[inventory_hostname].esxi }}"
+  include: plays/vcenter.yml
+
+- name: gather the VM facts
+  vmware_guest_facts:
+    hostname: "{{ vcenter }}"
+    username: "{{ usr }}"
+    password: "{{ pwd }}"
+    validate_certs: no
+    datacenter: datacenter
+    name: "{{ inventory_hostname }}"
+  register: facts
+  delegate_to: localhost
+- debug:
+    var: facts
+    verbosity: 2
+
+- set_fact:
+    snap_id: "{{ facts.instance.snapshots | map(attribute='id') | max | int + 1 }}"
+  when: facts.instance.current_snapshot is not none
+
+- set_fact:
+    snap_name: "snap{{ snap_id }}"
+  when: snap_name == "auto"
+
+- name: Create snapshot
+  vmware_guest_snapshot:
+    hostname: "{{ vcenter }}"
+    username: "{{ usr }}"
+    password: "{{ pwd }}"
+    datacenter: datacenter
+    name: "{{ inventory_hostname }}"
+    state: present
+    snapshot_name: "{{ vm_data[inventory_hostname].snap_name }}"
+    description: test for ansible plabook
+  register: snapshot
+  delegate_to: localhost
+- debug:
+    var: snapshot
+    verbosity: 2

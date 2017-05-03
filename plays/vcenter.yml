@@ -1,0 +1,13 @@
+- name: set IP of the vCenter 10.180.136.31
+  set_fact:
+    vcenter: "10.180.136.31"
+  when: esxi in ['10.180.136.22', '10.180.136.23', '10.180.136.24']
+- name: set IP of the vCenter 172.31.32.110
+  set_fact:
+    vcenter: "172.31.32.110"
+  when: esxi in ['172.31.32.54', '172.31.32.55', '172.31.32.56']
+- name: set IP of the vCenter 172.31.32.111
+  set_fact:
+    vcenter: "172.31.32.111"
+  when: esxi in ['172.31.32.11', '172.31.32.57', '172.31.32.58']
+

@@ -1,0 +1,22 @@
+- command: sed -i "s/#UseDNS yes/UseDNS no/" /etc/ssh/sshd_config
+- service: name=sshd state=restarted
+- group: name=ansible_install state=present
+- user: name=ansible_install comment="User for Ansible provisioning" group=ansible_install password={{ password }}
+- lineinfile: "dest=/etc/sudoers state=present regexp='^%ansible_install' line='%ansible_install ALL=(ALL) ALL'" 
+- file: path=/home/ansible_install/.ssh/ owner=ansible_install group=ansible_install state=directory mode=0700
+- command: cp /root/.ssh/id_rsa /home/ansible_install/.ssh/
+- command: cp /root/.ssh/id_rsa.pub /home/ansible_install/.ssh/
+- command: cp /root/.ssh/id_rsa.pub /home/ansible_install/.ssh/authorized_keys
+- command: chown ansible_install:ansible_install /home/ansible_install/.ssh/id_rsa
+- command: chown ansible_install:ansible_install /home/ansible_install/.ssh/id_rsa.pub
+- command: chown ansible_install:ansible_install /home/ansible_install/.ssh/authorized_keys
+- blockinfile:
+    dest: /etc/ssh/ssh_config
+    block: |
+       Host *
+          StrictHostKeyChecking no
+          UserKnownHostsFile=/dev/null
+- command: sed -i '/127.0.0.1/ s/ {{ inventory_hostname }}//g' /etc/hosts
+- file: path=/var/log/ansible owner=ansible_install group=ansible_install state=directory
+- file: path=/opt/delivery/customer_rpm owner=ansible_install group=ansible_install state=directory
+- lineinfile: dest=/etc/sudoers line="ansible_install ALL=(ALL) NOPASSWD{{ ":" }} ALL"

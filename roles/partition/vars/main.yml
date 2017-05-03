@@ -1,0 +1,4 @@
+sum_sectors: 2048
+exclude_device: "sr0"
+par_number: 1
+par_start: 2048

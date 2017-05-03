@@ -1,0 +1,80 @@
+---
+- set_fact:
+    dev: "{{ ansible_devices.keys() | difference(exclude_device) | max }}"
+  tags:
+    - test
+- set_fact:
+    par_number: "{{ ansible_devices[dev].partitions.keys() | max | list | min | int + 1 }}"
+    par_start: "{{ ansible_devices[dev].partitions[ansible_devices[dev].partitions.keys() | max].sectors | int + ansible_devices[dev].partitions[ansible_devices[dev].partitions.keys() | max].start | int }}"
+  when: ansible_devices[dev].partitions.keys()
+  tags:
+    - test
+- set_fact:
+    sum_sectors: "{{ sum_sectors|int + ansible_devices[dev].partitions[item].sectors|int }}"
+  with_items: "{{ ansible_devices[dev].partitions.keys() }}"
+  when: ansible_devices[dev].partitions.keys()
+  tags:
+    - test
+- name: Get PV names of ol_ol7--sb-root
+  command: pvs --options pv_name --noheadings
+  register: par_pvs
+  changed_when: False
+  tags:
+    - test
+- vars:
+    msg: |
+      ***********************************
+      ** all vars:
+      *    used device:       {{ dev }}
+      *    parted number:     {{ par_number }}
+      *    parted part_start: {{ par_start }}
+      *    sectors used:      {{ sum_sectors }}
+      *    sectors free:      {{ ansible_devices[dev].sectors|int - sum_sectors|int }}
+      *    ol_ol7--sb-root:   {{ par_pvs.stdout | regex_replace( ' ' , '' ) | regex_replace( '\n' , ',' ) }}
+  debug:
+    msg: "{{ msg.split('\n') }}"
+    verbosity: 2
+  when: ansible_devices[dev].partitions.keys()
+  tags:
+    - test
+- vars:
+    msg: |
+      ***********************************
+      ** all vars:
+      *    used device:       {{ dev }}
+      *    parted number:     {{ par_number }}
+      *    parted part_start: {{ par_start }}
+      *    sectors used:      {{ sum_sectors }}
+      *    sectors free:      {{ ansible_devices[dev].sectors|int - sum_sectors|int }}
+      *    ol_ol7--sb-root:   {{ par_pvs.stdout | regex_replace( ' ' , '' ) | regex_replace( '\n' , ',' ) }}
+  debug:
+    msg: "{{ msg.split('\n') }}"
+    verbosity: 2
+  when: ansible_devices[dev].partitions.keys() | join(',') | trim == ''
+  tags:
+    - test
+- vars:
+    msg: |
+      ***********************************
+      ** there are no free sectors for the expansion
+      *
+  debug:
+    msg: "{{ msg.split('\n') }}"
+  when: ansible_devices[dev].sectors|int <= sum_sectors|int
+  failed_when: ansible_devices[dev].sectors|int <= sum_sectors|int
+  tags:
+    - test
+- name: Create new partition
+  parted:
+    device: "/dev/{{ dev }}"
+    number: "{{ par_number }}"
+    part_start: "{{ par_start }}s"
+    state: present
+    flags: [ lvm ]
+  register: par
+- name: Resize Logical volume
+  lvg:
+    pvs: "{{ par_pvs.stdout | regex_replace( ' ' , '' ) | regex_replace( '\n' , ',' ) }},/dev/{{ dev }}{{ par_number }}"
+    vg: ol_ol7-sb
+- name: Resize Logical volume
+  command: lvresize -rl +100%FREE /dev/ol_ol7-sb/root

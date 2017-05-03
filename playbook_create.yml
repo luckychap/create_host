@@ -1,0 +1,31 @@
+---
+- name: Create all setuped VMs and add them to inventory
+  hosts: localhost
+  tasks:
+    - name: include create_vm role
+      include_role:
+        name: create_vm
+      vars:
+        esxi: "{{ item.value.esxi }}"
+        vm_name: "{{ item.key }}"
+        vm_disk: "{{ item.value.disk }}"
+        datastore: "{{ item.value.datastore }}"
+        vm_mem: "{{ item.value.ram_memory_mb }}"
+        vm_cpu: "{{ item.value.cpu_count }}"
+        vm_ip: "{{ item.value.IP_address }}"
+        vm_template: "{{ item.value.vm_template }}"
+      with_dict: "{{ vm_data }}"
+
+    - name: Add to inventory
+      add_host:
+        name: "{{ item.key }}"
+        groups: new
+        ansible_ssh_host: "{{ item.value.ip_address }}"
+      with_dict: "{{ vm_data }}"
+- name: Additional changes on created VMs
+  hosts: new
+  become: True
+  roles:
+    - partition
+    - ansible_user
+    - snapshot_vm
